@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StellaWare - Service Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #121212;
+            color: white;
+        }
+        h1 {
+            color: #FFD700;
+        }
+        .status-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+        .status-box {
+            width: 200px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .online { background-color: lightgreen; color: black; }
+        .offline { background-color: red; color: white; }
+        .undetected { background-color: gray; color: white; }
+    </style>
+</head>
+<body>
+    <h1>StellaWare - Service Status</h1>
+    <div class="status-container" id="status-container">
+        <p>Loading...</p>
+    </div>
+
+    <script>
+        async function fetchStatus() {
+            try {
+                const response = await fetch('https://visuals.gg/status', { mode: 'no-cors' });
+                const text = await response.text();
+                
+                // Create a temporary HTML parser
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(text, 'text/html');
+
+                // Extracting statuses from the visuals.gg page (assuming we target specific classes or IDs)
+                let services = {
+                    "Crusader": extractStatus(doc, 'Crusader'), 
+                    "Lethal Lite": extractStatus(doc, 'Lethal Lite'), 
+                    "Lethal Full": extractStatus(doc, 'Lethal Full'), 
+                    "Antarctica": "Undetected" // Always set to "Undetected"
+                };
+
+                const container = document.getElementById('status-container');
+                container.innerHTML = '';
+
+                for (let [name, status] of Object.entries(services)) {
+                    const statusBox = document.createElement('div');
+                    let statusClass = status === 'online' ? 'online' : (status === 'offline' ? 'offline' : 'undetected');
+                    statusBox.className = `status-box ${statusClass}`;
+                    statusBox.innerHTML = `<h2>${name}</h2><p>${status.toUpperCase()}</p>`;
+                    container.appendChild(statusBox);
+                }
+            } catch (error) {
+                console.error('Error fetching status:', error);
+                document.getElementById('status-container').innerHTML = "<p>Error fetching status.</p>";
+            }
+        }
+
+        function extractStatus(doc, serviceName) {
+            // This function needs to be customized based on how the data is structured on visuals.gg
+            let statusElement = doc.querySelector(`[data-service="${serviceName}"]`); 
+            return statusElement ? statusElement.textContent.trim().toLowerCase() : "unknown";
+        }
+
+        fetchStatus();
+        setInterval(fetchStatus, 60000); // Auto-update every 60 seconds
+    </script>
+</body>
+</html>
